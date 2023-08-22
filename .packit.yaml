@@ -72,18 +72,6 @@ jobs:
     - destructive
 
 - &tests-tier0-non-destructive-manual
-  <<: *tests-tier0-destructive-manual
-  identifier: "tier0-non-destructive"
-  tmt_plan: "tier0/non-destructive"
-  labels:
-    - tier0
-    - tier0-non-destructive
-    - non-destructive
-
-- &tests-tier1-destructive-manual
-  <<: *tests-tier0-destructive-manual
-  identifier: "tier1-destructive"
-  tmt_plan: "tier1/destructive"
   labels:
     - tier1
     - tier1-destructive
@@ -97,6 +85,17 @@ jobs:
 #  labels:
 #    - tier1-non-destructive
 #    - non-destructive
+<<<<<<< HEAD
+=======
+
+- &tests-tier1-non-destructive-manual
+  <<: *tests-tier0
+  identifier: "tier1-non-destructive"
+  tmt_plan: "tier1/non-destructive"
+  labels:
+    - tier1-non-destructive
+    - non-destructive
+>>>>>>> 343953f (Application lock; uses standard Linux lockfile method.)
 
 # Tests on merge to main stage
 - &tests-tier1
