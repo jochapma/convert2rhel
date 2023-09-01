@@ -75,9 +75,6 @@ def run():
     # Initialize logging to stop duplicate messages.
     disable_root_logger()
 
-    # Make sure we're being run by root
-    utils.require_root()
-
     from convert2rhel import main
 
     retval = 0
