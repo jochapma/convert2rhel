@@ -64,6 +64,12 @@ def initialize_logger(log_name, log_dir):
 
 
 def main():
+    """Wrapper around the main function; performs everything we have
+    to set up before starting the actual conversion process itself,
+    then calls main_locked()--protected by the application lock--to do
+    the conversion process.
+    """
+
     process_phase = ConversionPhase.INIT
 
     # initialize logging
@@ -81,7 +87,7 @@ def main():
     except applock.ApplicationLockedError:
         sys.stderr.write("Another copy of convert2rhel is running.\n")
         sys.stderr.write("\nNo changes were made to the system.\n")
-    return 1
+        return 1
 
 
 def main_locked(process_phase):
