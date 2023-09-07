@@ -28,6 +28,24 @@ def test_check_user_privileges(shell):
     assert shell(f"userdel -r '{user}'").returncode == 0
 
 
+@pytest.mark.test_help_nonroot
+def test_check_help_nonroot(shell):
+    """
+    Verify that convert2rhel --help works for a non-root user.
+    """
+    user = "testuser"
+    # Create non-root user if not created already
+    assert shell(f"useradd '{user}'").returncode == 0
+    # Set user to non-root entity 'testuser' and run c2r
+    result = shell("runuser -l testuser -c 'convert2rhel --help'")
+    # Check the program exits without signalling a failure
+    assert result.returncode == 0
+    # Check the program exits for the correct reason
+    assert "show this help message and exit" in result.output
+    # Delete testuser (if present)
+    assert shell(f"userdel -r '{user}'").returncode == 0
+
+
 @pytest.mark.test_manpage
 def test_manpage_exists(shell):
     """
