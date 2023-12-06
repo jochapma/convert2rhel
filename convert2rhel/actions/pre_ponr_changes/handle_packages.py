@@ -16,6 +16,7 @@
 __metaclass__ = type
 
 import logging
+import os
 
 from convert2rhel import actions, pkghandler
 from convert2rhel.systeminfo import system_info
@@ -46,14 +47,9 @@ class ListThirdPartyPackages(actions.Action):
 
             logger.warning(warning_message)
             logger.info(pkg_list)
-            self.set_result(
-                level="SUCCESS",
-                id="THIRD_PARTY_PACKAGE_DETECTED",
-                title="Third party packages detected",
-            )
             self.add_message(
                 level="WARNING",
-                id="THIRD_PARTY_PACKAGE_DETECTED_MESSAGE",
+                id="THIRD_PARTY_PACKAGE_DETECTED",
                 title="Third party packages detected",
                 description="Third party packages will not be replaced during the conversion.",
                 diagnosis=warning_message + ", ".join(pkghandler.get_pkg_nevras(third_party_pkgs)),
@@ -79,6 +75,9 @@ class RemoveExcludedPackages(actions.Action):
 
         logger.task("Convert: Remove excluded packages")
         logger.info("Searching for the following excluded packages:\n")
+
+        pkgs_removed = []
+
         try:
             pkgs_to_remove = sorted(pkghandler.get_packages_to_remove(system_info.excluded_pkgs))
             # this call can return None, which is not ideal to use with sorted.
@@ -111,14 +110,15 @@ class RemoveExcludedPackages(actions.Action):
                 description="Excluded packages which could not be removed",
                 diagnosis=message,
             )
-        else:
-            message = "The following packages were removed: %s" % ", ".join(pkgs_removed)
+        if pkgs_removed:
+            message = "The following packages will be removed during the conversion: %s" % ", ".join(pkgs_removed)
             logger.info(message)
             self.add_message(
                 level="INFO",
                 id="EXCLUDED_PACKAGES_REMOVED",
-                title="Excluded packages removed",
-                description="Excluded packages that have been removed",
+                title="Excluded packages to be removed",
+                description="We have identified installed packages that match a pre-defined list of packages that are"
+                " to be removed during the conversion",
                 diagnosis=message,
             )
 
@@ -152,6 +152,9 @@ class RemoveRepositoryFilesPackages(actions.Action):
 
         logger.task("Convert: Remove packages containing .repo files")
         logger.info("Searching for packages containing .repo files or affecting variables in the .repo files:\n")
+
+        pkgs_removed = []
+
         try:
             pkgs_to_remove = sorted(pkghandler.get_packages_to_remove(system_info.repofile_pkgs))
             # this call can return None, which is not ideal to use with sorted.
@@ -184,13 +187,14 @@ class RemoveRepositoryFilesPackages(actions.Action):
                 description="Repository file packages which could not be removed",
                 diagnosis=message,
             )
-        else:
-            message = "The following packages were removed: %s" % ", ".join(pkgs_removed)
+        if pkgs_removed:
+            message = "The following packages will be removed during the conversion: %s" % ", ".join(pkgs_removed)
             logger.info(message)
             self.add_message(
                 level="INFO",
                 id="REPOSITORY_FILE_PACKAGES_REMOVED",
-                title="Repository file packages removed",
-                description="Repository file packages that were removed",
+                title="Repository file packages to be removed",
+                description="We have identified installed packages that match a pre-defined list of packages that are"
+                " to be removed during the conversion",
                 diagnosis=message,
             )

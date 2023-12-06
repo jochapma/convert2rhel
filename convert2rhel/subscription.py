@@ -841,7 +841,7 @@ def _relevant_subscription_manager_pkgs():
             "libdnf-plugin-subscription-manager",
             "python3-subscription-manager-rhsm",
             "python3-cloud-what",
-            "subscription-manager-rhsm-certificates.x86_64",
+            "subscription-manager-rhsm-certificates",
         ]
 
     if system_info.is_rpm_installed("json-c.i686"):

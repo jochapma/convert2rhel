@@ -255,7 +255,7 @@ class TestNeededSubscriptionManagerPkgs:
                 frozenset(
                     (
                         "subscription-manager",
-                        "subscription-manager-rhsm-certificates.x86_64",
+                        "subscription-manager-rhsm-certificates",
                         "python3-subscription-manager-rhsm",
                         "python3-cloud-what",
                         "libdnf-plugin-subscription-manager",

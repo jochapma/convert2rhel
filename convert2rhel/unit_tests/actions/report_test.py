@@ -55,7 +55,8 @@ _LONG_MESSAGE = {
                 },
             },
             {
-                "format_version": "1.0",
+                "format_version": "1.1",
+                "status": "WARNING",
                 "actions": {
                     "CONVERT2RHEL_LATEST_VERSION": {
                         "result": dict(level="SUCCESS", id="SUCCESS"),
@@ -90,7 +91,8 @@ _LONG_MESSAGE = {
                 },
             },
             {
-                "format_version": "1.0",
+                "format_version": "1.1",
+                "status": "WARNING",
                 "actions": {
                     "CONVERT2RHEL_LATEST_VERSION": {
                         "result": dict(level="SUCCESS", id="SUCCESS"),
@@ -603,8 +605,8 @@ def test_messages_summary_with_long_message(long_message, caplog):
             },
             False,
             [
-                r"\(OVERRIDABLE\) PreSubscription1::SOME_OVERRIDABLE - Overridable\n     Description: Action override\n     Diagnosis: User override\n     Remediation: move on",
                 r"\(SKIP\) PreSubscription2::SKIPPED - Skipped\n     Description: Action skip\n     Diagnosis: User skip\n     Remediation: move on",
+                r"\(OVERRIDABLE\) PreSubscription1::SOME_OVERRIDABLE - Overridable\n     Description: Action override\n     Diagnosis: User override\n     Remediation: move on",
             ],
         ),
         (
@@ -648,9 +650,9 @@ def test_messages_summary_with_long_message(long_message, caplog):
             },
             False,
             [
-                r"\(ERROR\) ErrorAction::ERROR - Error\n     Description: Action error\n     Diagnosis: User error\n     Remediation: move on",
-                r"\(OVERRIDABLE\) OverridableAction::OVERRIDABLE - Overridable\n     Description: Action override\n     Diagnosis: User override\n     Remediation: move on",
                 r"\(SKIP\) SkipAction::SKIP - Skip\n     Description: Action skip\n     Diagnosis: User skip\n     Remediation: move on",
+                r"\(OVERRIDABLE\) OverridableAction::OVERRIDABLE - Overridable\n     Description: Action override\n     Diagnosis: User override\n     Remediation: move on",
+                r"\(ERROR\) ErrorAction::ERROR - Error\n     Description: Action error\n     Diagnosis: User error\n     Remediation: move on",
             ],
         ),
         # Message order with `include_all_reports` set to True.
@@ -707,10 +709,10 @@ def test_messages_summary_with_long_message(long_message, caplog):
             },
             True,
             [
-                r"\(ERROR\) ErrorAction::ERROR - Error\n     Description: Action error\n     Diagnosis: User error\n     Remediation: move on",
-                r"\(OVERRIDABLE\) OverridableAction::OVERRIDABLE - Overridable\n     Description: Action override\n     Diagnosis: User override\n     Remediation: move on",
-                r"\(SKIP\) SkipAction::SKIP - Skip\n     Description: Action skip\n     Diagnosis: User skip\n     Remediation: move on",
                 r"\(SUCCESS\) PreSubscription::SUCCESS - N/A",
+                r"\(SKIP\) SkipAction::SKIP - Skip\n     Description: Action skip\n     Diagnosis: User skip\n     Remediation: move on",
+                r"\(OVERRIDABLE\) OverridableAction::OVERRIDABLE - Overridable\n     Description: Action override\n     Diagnosis: User override\n     Remediation: move on",
+                r"\(ERROR\) ErrorAction::ERROR - Error\n     Description: Action error\n     Diagnosis: User error\n     Remediation: move on",
             ],
         ),
     ),
@@ -1465,3 +1467,110 @@ def test_get_combined_results_and_message(results, expected):
     combined_results_and_message = report.get_combined_results_and_message(results)
 
     assert combined_results_and_message == expected
+
+
+@pytest.mark.parametrize(
+    ("actions", "expected"),
+    (
+        (
+            {
+                "action1": {
+                    "result": {"level": STATUS_CODE["ERROR"]},
+                    "messages": [{"level": STATUS_CODE["SUCCESS"]}],
+                },
+                "action2": {
+                    "result": {"level": STATUS_CODE["WARNING"]},
+                    "messages": [{"level": STATUS_CODE["SUCCESS"]}],
+                },
+            },
+            "ERROR",
+        ),
+        (
+            {
+                "action1": {
+                    "result": {"level": STATUS_CODE["SUCCESS"]},
+                    "messages": [],
+                },
+                "action2": {
+                    "result": {"level": STATUS_CODE["SUCCESS"]},
+                    "messages": [],
+                },
+            },
+            "SUCCESS",
+        ),
+        (
+            {
+                "action1": {
+                    "result": {"level": STATUS_CODE["SUCCESS"]},
+                    "messages": [{"level": STATUS_CODE["WARNING"]}],
+                },
+                "action2": {
+                    "result": {"level": STATUS_CODE["SUCCESS"]},
+                    "messages": [],
+                },
+            },
+            "WARNING",
+        ),
+        (
+            {
+                "action1": {
+                    "result": {"level": STATUS_CODE["INFO"]},
+                    "messages": [{"level": STATUS_CODE["SUCCESS"]}],
+                },
+                "action2": {
+                    "result": {"level": STATUS_CODE["SUCCESS"]},
+                    "messages": [],
+                },
+            },
+            "INFO",
+        ),
+        (
+            {
+                "action1": {
+                    "result": {"level": STATUS_CODE["INFO"]},
+                    "messages": [{"level": STATUS_CODE["SUCCESS"]}],
+                },
+                "action2": {
+                    "result": {"level": STATUS_CODE["SKIP"]},
+                    "messages": [],
+                },
+            },
+            "SKIP",
+        ),
+        (
+            {
+                "action1": {
+                    "result": {"level": STATUS_CODE["INFO"]},
+                    "messages": [{"level": STATUS_CODE["OVERRIDABLE"]}],
+                },
+                "action2": {
+                    "result": {"level": STATUS_CODE["ERROR"]},
+                    "messages": [],
+                },
+            },
+            "ERROR",
+        ),
+    ),
+)
+def test_find_highest_report_level_expected(actions, expected):
+    """Should be sorted descending from the highest status to the lower one."""
+    result = report.find_highest_report_level(actions)
+    assert result == expected
+
+
+def test_find_highest_report_level_unknown_status():
+    """Should ignore unknown statuses in report"""
+    expected_output = "ERROR"
+
+    action_results_test = {
+        "action1": {
+            "result": {"level": STATUS_CODE["ERROR"]},
+            "messages": [{"level": STATUS_CODE["SUCCESS"]}, {"level": STATUS_CODE["WARNING"]}],
+        },
+        "action2": {
+            "result": {"level": STATUS_CODE["WARNING"]},
+            "messages": [{"level": "FOO"}, {"level": STATUS_CODE["INFO"]}],
+        },
+    }
+    result = report.find_highest_report_level(action_results_test)
+    assert result == expected_output

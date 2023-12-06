@@ -15,6 +15,8 @@
 
 __metaclass__ = type
 
+import os
+
 import pytest
 import six
 
@@ -27,7 +29,7 @@ from convert2rhel.unit_tests import (
     GetThirdPartyPkgsMocked,
     RemovePkgsUnlessFromRedhatMocked,
 )
-from convert2rhel.unit_tests.conftest import centos8
+from convert2rhel.unit_tests.conftest import centos7, centos8
 
 
 six.add_move(six.MovedModule("mock", "mock", "unittest.mock"))
@@ -59,33 +61,21 @@ def test_list_third_party_packages(pretend_os, list_third_party_packages_instanc
         " replaced. Red Hat support won't be provided"
         " for the following third party packages:\npkg1-None-None.None, pkg2-None-None.None, gpg-pubkey-1.0.0-1.x86_64"
     )
+    list_third_party_packages_instance.run()
     expected = set(
         (
             actions.ActionMessage(
                 level="WARNING",
-                id="THIRD_PARTY_PACKAGE_DETECTED_MESSAGE",
+                id="THIRD_PARTY_PACKAGE_DETECTED",
                 title="Third party packages detected",
                 description="Third party packages will not be replaced during the conversion.",
                 diagnosis=diagnosis,
-                remediation=None,
-                variables={},
             ),
         )
     )
-    list_third_party_packages_instance.run()
-    unit_tests.assert_actions_result(
-        list_third_party_packages_instance,
-        level="SUCCESS",
-        id="THIRD_PARTY_PACKAGE_DETECTED",
-        title="Third party packages detected",
-        description=None,
-        diagnosis=None,
-        remediation=None,
-    )
-
-    assert len(pkghandler.format_pkg_info.call_args[0][0]) == 3
     assert expected.issuperset(list_third_party_packages_instance.messages)
     assert expected.issubset(list_third_party_packages_instance.messages)
+    assert len(pkghandler.format_pkg_info.call_args[0][0]) == 3
 
 
 @pytest.fixture
@@ -117,9 +107,10 @@ def test_remove_excluded_packages_all_removed(remove_excluded_packages_instance,
             actions.ActionMessage(
                 level="INFO",
                 id="EXCLUDED_PACKAGES_REMOVED",
-                title="Excluded packages removed",
-                description="Excluded packages that have been removed",
-                diagnosis="The following packages were removed: centos-logos-70.0.6-3.el7.centos.noarch",
+                title="Excluded packages to be removed",
+                description="We have identified installed packages that match a pre-defined list of packages that are"
+                " to be removed during the conversion",
+                diagnosis="The following packages will be removed during the conversion: centos-logos-70.0.6-3.el7.centos.noarch",
                 remediation=None,
             ),
         )
@@ -150,6 +141,15 @@ def test_remove_excluded_packages_not_removed(pretend_os, remove_excluded_packag
                 title="Excluded packages not removed",
                 description="Excluded packages which could not be removed",
                 diagnosis="The following packages were not removed: gpg-pubkey-1.0.0-1.x86_64, pkg1-None-None.None, pkg2-None-None.None",
+                remediation=None,
+            ),
+            actions.ActionMessage(
+                level="INFO",
+                id="EXCLUDED_PACKAGES_REMOVED",
+                title="Excluded packages to be removed",
+                description="We have identified installed packages that match a pre-defined list of packages that are"
+                " to be removed during the conversion",
+                diagnosis="The following packages will be removed during the conversion: kernel-core",
                 remediation=None,
             ),
         )
@@ -205,9 +205,10 @@ def test_remove_repository_files_packages_all_removed(remove_repository_files_pa
             actions.ActionMessage(
                 level="INFO",
                 id="REPOSITORY_FILE_PACKAGES_REMOVED",
-                title="Repository file packages removed",
-                description="Repository file packages that were removed",
-                diagnosis="The following packages were removed: centos-logos-70.0.6-3.el7.centos.noarch",
+                title="Repository file packages to be removed",
+                description="We have identified installed packages that match a pre-defined list of packages that are"
+                " to be removed during the conversion",
+                diagnosis="The following packages will be removed during the conversion: centos-logos-70.0.6-3.el7.centos.noarch",
                 remediation=None,
             ),
         )
@@ -241,6 +242,15 @@ def test_remove_repository_files_packages_not_removed(
                 title="Repository file packages not removed",
                 description="Repository file packages which could not be removed",
                 diagnosis="The following packages were not removed: gpg-pubkey-1.0.0-1.x86_64, pkg1-None-None.None, pkg2-None-None.None",
+                remediation=None,
+            ),
+            actions.ActionMessage(
+                level="INFO",
+                id="REPOSITORY_FILE_PACKAGES_REMOVED",
+                title="Repository file packages to be removed",
+                description="We have identified installed packages that match a pre-defined list of packages that are"
+                " to be removed during the conversion",
+                diagnosis="The following packages will be removed during the conversion: kernel-core",
                 remediation=None,
             ),
         )
