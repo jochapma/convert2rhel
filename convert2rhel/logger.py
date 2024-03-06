@@ -86,6 +86,7 @@ class LogfileBufferHandler(BufferingHandler):
         super(LogfileBufferHandler, self).__init__(capacity)
         # the FileLogger handler that we are logging to
         self._handler_name = handler_name
+        self._closing = False
 
     @property
     def target(self):
@@ -102,8 +103,9 @@ class LogfileBufferHandler(BufferingHandler):
         return logging.NullHandler()
 
     def flush(self):
-        for record in self.buffer:
-            self.target.handle(record)
+        if not self._closing:
+            for record in self.buffer:
+                self.target.handle(record)
 
     def shouldFlush(self, record):
         """
@@ -116,6 +118,10 @@ class LogfileBufferHandler(BufferingHandler):
         if super(LogfileBufferHandler, self).shouldFlush(record):
             self.buffer = self.buffer[1:]
         return False
+
+    def close(self):
+        self._closing = True
+        super(LogfileBufferHandler, self).close()
 
 
 def setup_logger_handler():
